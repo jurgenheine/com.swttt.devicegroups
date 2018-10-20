@@ -1,0 +1,38 @@
+<script src='../../../assets/vue.min.js'></script>
+<script>
+    Homey.setTitle('Set advanced settings');
+    new Vue({
+        el:'#settingdiv',
+        data: {
+            delay: '0',
+            retries: '0'
+        },
+        watch: {
+            delay: function (newVal, oldVal) {
+                Homey.emit('updateDelay', newVal, function (err, result) {
+                    if (err) { console.log(err); return; }
+                });
+            },
+            retries: function (newVal, oldVal) {
+                Homey.emit('updateRetries', newVal, function (err, result) {
+                    if (err) { console.log(err); return; }
+                });
+            }
+        }
+    });
+</script>
+
+<div id="settingdiv">
+    <span>These settings can be usefull when there is a group with a lot of devices. The defaults are good for small groups.</span>
+    <span>&nbsp;</span>
+    <label for="delayinput" class="name">
+        <div class="overlay"></div>
+        <span class="name" tabindex="-1">Delay between devices(ms).</span>
+    </label>
+    <input id="delayinput" name="delayinput" type="number" tabindex="1" v-model="delay">
+    <label for="retryinput" class="name">
+        <div class="overlay"></div>
+        <span class="name" tabindex="-1">Number of retries(0-10)</span>
+    </label>
+    <input id="retryinput" name="retryinput" type="number" tabindex="2" v-model="retries">
+</div>

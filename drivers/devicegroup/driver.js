@@ -14,7 +14,11 @@ class DeviceGroupDriver extends Homey.Driver {
   onPair( socket ) {
       let pairingDevice = {};
           pairingDevice.name = 'Grouped device';
-          pairingDevice.settings = {};
+          pairingDevice.settings = {
+              groupedDevices: [],
+              delay: {},
+              retries: {}
+          };
           pairingDevice.data = {};
           socket.on('addClass', function( data, callback ) {
               pairingDevice.class = data.class;
@@ -40,6 +44,14 @@ class DeviceGroupDriver extends Homey.Driver {
           socket.on('devicesChanged', function( data, callback ) {
               pairingDevice.settings.groupedDevices = data.devices;
               callback( null, pairingDevice );
+          });
+          socket.on('updateDelay', function (data, callback) {
+              pairingDevice.settings.delay = data;
+              callback(null, pairingDevice);
+          });
+          socket.on('updateRetries', function (data, callback) {
+              pairingDevice.settings.retries = data;
+              callback(null, pairingDevice);
           });
           socket.on('allmostDone', function( data, callback ) {
               pairingDevice.data.id = guid();

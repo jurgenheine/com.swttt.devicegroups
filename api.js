@@ -39,6 +39,14 @@ module.exports = [
     }
   },
   {
+      // Update the grouped devices for a group.
+      method: 'PUT',
+      path: '/settings/:id',
+      fn: async (args) => {
+          await Homey.app.setSettings(args.params.id, args.body);
+      }
+  },
+  {
     // Get a list of all devices.
     method : 'GET',
     path   : '/devices',
