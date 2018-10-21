@@ -4,18 +4,26 @@
     new Vue({
         el:'#settingdiv',
         data: {
-            delay: '0',
-            retries: '0'
+            delay                   : '0',
+            retries                 : '0',
+            maxconcurrentcommands   : '0'
         },
         watch: {
             delay: function (newVal, oldVal) {
                 Homey.emit('updateDelay', newVal, function (err, result) {
                     if (err) { console.log(err); return; }
+                    delay = result.settings.delay;
                 });
             },
             retries: function (newVal, oldVal) {
                 Homey.emit('updateRetries', newVal, function (err, result) {
                     if (err) { console.log(err); return; }
+                });
+            },
+            maxconcurrentcommands: function (newVal, oldVal) {
+                Homey.emit('updateMaxconcurrentcommands', newVal, function (err, result) {
+                    if (err) { console.log(err); return; }
+                    delay = result.settings.delay;
                 });
             }
         }
@@ -27,12 +35,17 @@
     <span>&nbsp;</span>
     <label for="delayinput" class="name">
         <div class="overlay"></div>
-        <span class="name" tabindex="-1">Delay between devices(ms).</span>
+        <span class="name" tabindex="-1">Delay between devices (ms).</span>
     </label>
     <input id="delayinput" name="delayinput" type="number" tabindex="1" v-model="delay">
     <label for="retryinput" class="name">
         <div class="overlay"></div>
-        <span class="name" tabindex="-1">Number of retries(0-10)</span>
+        <span class="name" tabindex="-1">Number of retries (0-10)</span>
     </label>
     <input id="retryinput" name="retryinput" type="number" tabindex="2" v-model="retries">
+    <label for="maxconcurrentcommandsinput" class="name">
+        <div class="overlay"></div>
+        <span class="name" tabindex="-1">Max concurent commands (0 means unlimited)</span>
+    </label>
+    <input id="maxconcurrentcommandsinput" name="maxconcurrentcommandsinput" type="number" tabindex="3" v-model="maxconcurrentcommands">
 </div>

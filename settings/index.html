@@ -47,15 +47,21 @@
                         <td :title='selectedGroup.id'>{{ selectedGroup.name }}</td>
                     </tr>
                     <tr>
-                        <td>Delay:</td>
+                        <td>Delay (ms):</td>
                         <td :title='selectedGroup.id'>
                             <input name="delay" type="number" tabindex="1" v-model="delay">
                         </td>
                     </tr>
                     <tr>
-                        <td>Retries:</td>
+                        <td>Retries (0-10):</td>
                         <td :title='selectedGroup.id'>
-                            <input name="delay" type="number" tabindex="1" v-model="retries">
+                            <input name="delay" type="number" tabindex="2" v-model="retries">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Max concurent commands (0 means unlimited):</td>
+                        <td :title='selectedGroup.id'>
+                            <input name="maxconcurrentcommands" type="number" tabindex="3" v-model="maxconcurrentcommands">
                         </td>
                     </tr>
                     <tr>
@@ -112,14 +118,15 @@
             new Vue({
                 el      : '#app-settings-view',
                 data    : {
-                    groups         : [],
-                    selectedGroup  : null,
-                    groupedDevices : [],
-                    delay          : '0',
-                    retries        : '0',
-                    isLoading      : false,
-                    isUpdating     : false,
-                    allDevices     : [],
+                    groups                  : [],
+                    selectedGroup           : null,
+                    groupedDevices          : [],
+                    delay                   : '0',
+                    retries                 : '0',
+                    maxconcurrentcommands   : '0',
+                    isLoading               : false,
+                    isUpdating              : false,
+                    allDevices              : [],
                 },
                 mounted() {
                     // Retrieve list of groups.
@@ -137,19 +144,48 @@
                             if (err) return Homey.alert(err);
                         });
                     },
-                    delay: function (val) {
+                    delay: function (newValue, oldValue) {
                         if (this.isLoading) return;
                         this.isUpdating = true;
-                        this.selectedGroup.settings.delay = val;
+                        if (newValue < 0) {
+                            this.delay = oldValue;
+                            return;
+                        }
+                        if (this.maxconcurrentcommands > 0 && newValue < 20) {
+                            this.delay = 20;
+                            return;
+                        }
+                        this.selectedGroup.settings.delay = newValue;
                         Homey.api('PUT', '/settings/' + this.selectedGroup.id, this.selectedGroup.settings, (err) => {
                             this.isUpdating = false;
                             if (err) return Homey.alert(err);
                         });
                     },
-                    retries: function (val) {
+                    retries: function (newValue, oldValue) {
+                        if (this.isLoading) return;
+                        if (newValue < 0 || newValue > 10) {
+                            this.retries = oldValue;
+                            return;
+                        }
+                        this.isUpdating = true;
+                        this.selectedGroup.settings.retries = newValue;
+                        Homey.api('PUT', '/settings/' + this.selectedGroup.id, this.selectedGroup.settings, (err) => {
+                            this.isUpdating = false;
+                            if (err) return Homey.alert(err);
+                        });
+                    },
+                    maxconcurrentcommands: function (newValue, oldValue) {
+                        if (newValue < 0) {
+                            this.maxconcurrentcommands = oldValue;
+                            return;
+                        }
+                        if (newValue > 0 && this.delay < 20) {
+                            this.maxconcurrentcommands = oldValue;
+                            return;
+                        }
                         if (this.isLoading) return;
                         this.isUpdating = true;
-                        this.selectedGroup.settings.retries = val;
+                        this.selectedGroup.settings.maxconcurrentcommands = newValue;
                         Homey.api('PUT', '/settings/' + this.selectedGroup.id, this.selectedGroup.settings, (err) => {
                             this.isUpdating = false;
                             if (err) return Homey.alert(err);
@@ -178,6 +214,7 @@
                             this.groupedDevices = (group.settings.groupedDevices || []).map(g => g.id);
                             this.delay = group.settings.delay;
                             this.retries = group.settings.retries;
+                            this.maxconcurrentcommands = group.settings.maxconcurrentcommands;
                             if (! this.allDevices.length) {
                                 this.isLoading = true;
                                 Homey.api('GET', '/devices', (err, devices) => {

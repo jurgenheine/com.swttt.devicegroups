@@ -54,6 +54,7 @@ class DeviceGroups extends Homey.App {
       let settings = group.getSettings();
       settings.retries = newsettings.retries;
       settings.delay = newsettings.delay;
+      settings.maxconcurrentcommands = newsettings.maxconcurrentcommands;
       // Update the group settings.
       return await group.setSettings(settings);
   }

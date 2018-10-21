@@ -17,7 +17,8 @@ class DeviceGroupDriver extends Homey.Driver {
           pairingDevice.settings = {
               groupedDevices: [],
               delay: {},
-              retries: {}
+              retries: {},
+              maxconcurrentcommands: {}
           };
           pairingDevice.data = {};
           socket.on('addClass', function( data, callback ) {
@@ -46,12 +47,32 @@ class DeviceGroupDriver extends Homey.Driver {
               callback( null, pairingDevice );
           });
           socket.on('updateDelay', function (data, callback) {
-              pairingDevice.settings.delay = data;
-              callback(null, pairingDevice);
+              if (data < 0)
+                  callback("Invalid value set", pairingDevice);
+              else {
+                  if (pairingDevice.settings.maxconcurrentcommands > 0 && data < 20)
+                      data = "20";
+                  pairingDevice.settings.delay = data;
+                  callback(null, pairingDevice);
+              }
           });
           socket.on('updateRetries', function (data, callback) {
-              pairingDevice.settings.retries = data;
-              callback(null, pairingDevice);
+              if (data < 0 || data > 10)
+                  callback("Invalid value set", pairingDevice);
+              else {
+                  pairingDevice.settings.retries = data;
+                  callback(null, pairingDevice);
+              }
+          });
+          socket.on('updateMaxconcurrentcommands', function (data, callback) {
+              if (data < 0)
+                  callback("Invalid value set", pairingDevice);
+              else {
+                  if (data > 0 && pairingDevice.settings.delay < 20)
+                      pairingDevice.settings.delay = "20";
+                  pairingDevice.settings.maxconcurrentcommands = data;
+                  callback(null, pairingDevice);
+              }
           });
           socket.on('allmostDone', function( data, callback ) {
               pairingDevice.data.id = guid();

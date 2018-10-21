@@ -7,6 +7,7 @@ const {
 
 var commandsArray = [];
 var executorIsRunning = false;
+var currentNumberOfExecutedCommands = 0;
 
 class DeviceGroupDevice extends Homey.Device {
 
@@ -64,6 +65,13 @@ class DeviceGroupDevice extends Homey.Device {
         return delay;
     }
 
+    getMaxconcurrentcommands(settings) {
+        var maxconcurrentcommands = parseInt(settings.maxconcurrentcommands);
+        if (isNaN(maxconcurrentcommands))
+            maxconcurrentcommands = 4;
+        return maxconcurrentcommands;
+    }
+
     getApi() {
         if (!this.api) {
             this.api = HomeyAPI.forCurrentHomey();
@@ -83,24 +91,32 @@ class DeviceGroupDevice extends Homey.Device {
         await api.devices.subscribe();
         var delay = this.getDelay(settings);
         var retries = this.getRetries(settings);
-
+        var maxconcurrentcommands = this.getMaxconcurrentcommands(settings);
         while (command != null) {
-            let device = await api.devices.getDevice({ id: command.deviceid });
-            await this.setDeviceValue(device, command, retries);
+            var executed = false;
+            if (currentNumberOfExecutedCommands < maxconcurrentcommands || maxconcurrentcommands < 1) {
+                let device = await api.devices.getDevice({ id: command.deviceid });
+                await this.setDeviceValue(device, command, retries);
+                executed = true;
+            }
             await this.sleep(delay);
-            command = await this.getCommandToExecute();
+            if(executed)
+                command = await this.getCommandToExecute();
         }
         await this.resetRun();
     }
 
     async setDeviceValue(device, command, retries) {
+        currentNumberOfExecutedCommands += 1;
         var starttime = Date.now();
         device.setCapabilityValue(command.key, command.value)
             .then(_ => {
+                currentNumberOfExecutedCommands -= 1;
                 var millis = Date.now() - starttime;
                 this.logDevice(device.name, command.key, command.value, 'succesfull in ' + millis + ' ms');
             })
             .catch(msg => {
+                currentNumberOfExecutedCommands -= 1;
                 this.logDevice(device.name, command.key, command.value, msg);
                 this.retryDeviceValue(device.name, command, retries);
             });
